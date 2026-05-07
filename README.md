@@ -1,23 +1,22 @@
-# LeadBot AI — AI-ассистент для генерации лидов
+# Kamila Urmanova — AI Automation & Prompt Engineering
 
-**Автоматическая квалификация клиентов, RAG по базе знаний, Telegram-уведомления и сбор заявок в Google Sheets.**
+**Сайт-визитка AI-специалиста со встроенным AI-ассистентом для консультаций и сбора заявок.**
 
-LeadBot AI — это AI-менеджер по первичной обработке входящих заявок. Общается с посетителями сайта, отвечает на вопросы из базы знаний, квалифицирует потребности через естественный диалог, собирает контактные данные с согласием на обработку и автоматически передаёт структурированные заявки вашей команде.
+Я помогаю бизнесу экономить время с помощью AI-ботов, нейросетей и автоматизации процессов. На сайте работает AI-ассистент, который отвечает на вопросы об услугах, помогает сформулировать задачу и передаёт заявку мне.
 
 ---
 
-## Возможности
+## Что умеет AI-ассистент
 
-- **RAG по базе знаний** — Ответы на основе 16 документов базы знаний. Гибридный поиск: embeddings (text-embedding-3-small) + keyword fallback.
-- **Разговорный AI** — Естественный диалог на базе GPT-4o Mini. Понимает контекст, задаёт уточняющие вопросы и ведёт клиента к оформлению заявки.
-- **Умная квалификация** — 5-стадийный пайплайн: приветствие → квалификация → запрос контакта → согласие → лид сохранён.
-- **Статусы лидов** — Автоматическое определение cold / warm / hot по содержанию диалога.
-- **Telegram-уведомления** — Мгновенное уведомление менеджера о новом лиде через Telegram Bot API.
-- **Сбор контактов** — Автоматическое распознавание Telegram-ников и номеров телефонов из свободного текста.
-- **Согласие по 152-ФЗ** — Встроенный механизм получения согласия на обработку персональных данных.
-- **Google Sheets** — Заявки с полной информацией попадают в таблицу через webhook.
-- **Логирование** — Структурированные логи всех событий: стадии, RAG, OpenAI, Telegram, ошибки.
-- **Премиальный UI** — Тёплый минималистичный дизайн в стиле quiet luxury.
+- **Консультация по услугам** — отвечает на вопросы о стоимости, сроках, формате работы на основе базы знаний (RAG).
+- **Квалификация задачи** — задаёт уточняющие вопросы, понимает контекст и определяет потребности клиента.
+- **Сбор заявки** — собирает имя, контакт (Telegram / телефон), получает согласие на обработку данных (152-ФЗ).
+- **Уважение отказа** — если клиент не хочет оставлять контакт, бот продолжает консультировать без давления.
+- **Защита от дублей** — после оформления заявки повторные сообщения не создают дубли в Google Sheets и Telegram.
+- **Google Sheets** — заявки с полной информацией сохраняются в таблицу через webhook.
+- **Telegram-уведомления** — мгновенное уведомление о новом лиде через Telegram Bot API.
+- **Статусы лидов** — автоматическое определение cold / warm / hot по содержанию диалога.
+- **Логирование** — структурированные логи всех событий с performance-метриками.
 
 ---
 
@@ -34,16 +33,17 @@ LeadBot AI — это AI-менеджер по первичной обработ
 | Иконки | Lucide React |
 | Хранение лидов | Google Sheets (Apps Script webhook) |
 | Уведомления | Telegram Bot API |
+| Деплой | Vercel |
 
 ---
 
-## Как это работает
+## Как работает бот
 
 ```
-Клиент открывает чат → AI приветствует → задаёт уточняющие вопросы
+Посетитель открывает чат → AI приветствует → задаёт уточняющие вопросы
 → ищет ответы в базе знаний (RAG) → понимает задачу
-→ запрашивает контакт → запрашивает согласие
-→ сохраняет лид в Google Sheets → отправляет уведомление в Telegram
+→ спрашивает имя → запрашивает контакт → запрашивает согласие
+→ сохраняет заявку в Google Sheets → отправляет уведомление в Telegram
 ```
 
 ### Стадии диалога
@@ -52,9 +52,35 @@ LeadBot AI — это AI-менеджер по первичной обработ
 |--------|---------------|
 | `greeting` | AI представляется, показывает быстрые действия |
 | `qualification` | 2–3 уточняющих вопроса о задаче клиента |
-| `contact_request` | Запрос Telegram или номера телефона |
-| `consent_request` | Согласие по 152-ФЗ с кнопками подтверждения/отказа |
-| `completed` | Лид сохранён, Telegram-уведомление отправлено |
+| `contact_request` | Сбор имени и контакта (Telegram или телефон) |
+| `consent_request` | Согласие по 152-ФЗ |
+| `completed` | Заявка сохранена, Telegram-уведомление отправлено |
+
+### Обязательный порядок сбора данных
+
+1. Задача / интерес клиента
+2. Имя клиента
+3. Контакт (Telegram или телефон)
+4. Согласие на обработку данных
+5. Сохранение заявки + Telegram-уведомление
+
+Бот не переходит к согласию, пока не собраны имя и контакт. Если контакт получен раньше имени, бот сначала спрашивает имя.
+
+### Поведение при отказе от контакта
+
+Если клиент пишет «не хочу давать номер», бот:
+- уважает отказ и не давит;
+- продолжает консультировать по задаче;
+- не сохраняет заявку и не отправляет Telegram;
+- если позже клиент сам оставит контакт — продолжает сценарий.
+
+### Поведение после оформления заявки
+
+После stage `completed`:
+- новые сообщения не создают дубли в Google Sheets;
+- Telegram-уведомление не отправляется повторно;
+- бот отвечает на вопросы как консультант;
+- новая заявка создаётся только по явному запросу клиента.
 
 ### RAG-поиск
 
@@ -63,13 +89,7 @@ LeadBot AI — это AI-менеджер по первичной обработ
 1. **Основной путь** — cosine similarity по предгенерированным embeddings (text-embedding-3-small)
 2. **Fallback** — keyword search по чанкам, если embeddings-индекс недоступен
 
-Найденные чанки передаются в system prompt как контекст для ответа.
-
-### Данные лида в Google Sheets
-
-```
-createdAt | name | contact | contactType | task | business | goal | timeline | leadStatus | consentGiven | summary | source | rawConversation | telegramSent
-```
+Embeddings-индекс создаётся один раз скриптом и читается из файла, не генерируется при каждом запросе.
 
 ---
 
@@ -85,8 +105,8 @@ createdAt | name | contact | contactType | task | business | goal | timeline | l
 ### Установка
 
 ```bash
-git clone https://github.com/urmanovaa/leadbot-ai.git
-cd leadbot-ai
+git clone https://github.com/urmanovaa/LeadBot.git
+cd LeadBot
 npm install
 ```
 
@@ -113,7 +133,7 @@ TELEGRAM_CHAT_ID=-100your-chat-id
 npm run build:embeddings
 ```
 
-Индекс сохраняется в `knowledge_base/.cache/embeddings.json`. Его нужно перегенерировать при обновлении файлов в `knowledge_base/`.
+Индекс сохраняется в `knowledge_base/.cache/embeddings.json`. Перегенерируйте при обновлении файлов в `knowledge_base/`.
 
 ### Запуск
 
@@ -129,49 +149,63 @@ npm run dev
 
 ```
 app/
-  page.tsx                        Лендинг
+  page.tsx                        Лендинг (сайт-визитка)
   layout.tsx                      Корневой layout
-  api/chat/route.ts               AI-чат эндпоинт (RAG + квалификация + логирование)
+  api/chat/route.ts               AI-чат (RAG + квалификация + лиды)
   api/lead/route.ts               Ручная отправка лида
+  api/health/route.ts             Диагностика env-переменных
+  api/test-telegram/route.ts      Тест Telegram-уведомлений
 
 components/
   chat/
     chat-widget.tsx               Плавающая кнопка чата
-    chat-window.tsx               Основной контейнер чата + логика
+    chat-window.tsx               Основной контейнер чата
     message-bubble.tsx            Компонент сообщения
     chat-input.tsx                Ввод с авто-ресайзом
-    quick-actions.tsx             Кнопки быстрых действий
+    quick-actions.tsx             Быстрые действия
     consent-actions.tsx           UI согласия (152-ФЗ)
     typing-indicator.tsx          Анимация набора текста
   landing/
-    hero.tsx, features.tsx, how-it-works.tsx, cta.tsx, footer.tsx
+    hero.tsx                      Hero-секция
+    features.tsx                  Услуги
+    how-it-works.tsx              Процесс работы
+    cta.tsx                       Призыв к действию
+    footer.tsx                    Подвал с контактами
 
 lib/
-  types.ts                        TypeScript-интерфейсы (ChatStage, LeadStatus, LeadPayload)
+  types.ts                        TypeScript-интерфейсы
   openai.ts                       Клиент OpenAI
-  prompts.ts                      Системный промпт (на основе system_prompt.md + RAG)
+  prompts.ts                      Системный промпт
   rag.ts                          RAG-поиск (embeddings + keyword fallback)
   knowledge-base.ts               Чтение и чанкинг .md файлов
-  lead-status.ts                  Определение cold/warm/hot
-  contact-parser.ts               Парсер Telegram/телефона
-  lead-summary.ts                 Генератор summary
-  google-sheets.ts                Интеграция с Google Sheets webhook
-  telegram.ts                     Telegram Bot API уведомления
+  contact-parser.ts               Парсер контактов и имён
+  lead-summary.ts                 Генератор summary и извлечение данных
+  google-sheets.ts                Интеграция с Google Sheets
+  telegram.ts                     Telegram Bot API (с timeout 5 сек)
   logger.ts                       Структурированное логирование
 
 knowledge_base/                   16 документов базы знаний (.md)
 knowledge_base/.cache/            Предгенерированный embeddings-индекс
 
 scripts/
-  build-embeddings.mjs            Скрипт генерации embeddings-индекса
+  build-embeddings.mjs            Генерация embeddings-индекса
 
 prompts/
-  system_prompt.md                Описание роли и правил AI-ассистента
+  system_prompt.md                Описание роли AI-ассистента
 
 docs/
   rag.md                          Документация RAG-системы
   testing.md                      Тестовые сценарии
 ```
+
+---
+
+## Диагностика (production)
+
+После деплоя на Vercel доступны два endpoint:
+
+- `GET /api/health` — проверка наличия env-переменных (без раскрытия значений)
+- `GET /api/test-telegram` — отправка тестового сообщения в Telegram-группу
 
 ---
 
@@ -185,11 +219,21 @@ docs/
 
 ## Деплой на Vercel
 
-1. Добавьте переменные окружения в настройках Vercel (Settings → Environment Variables)
-2. Закоммитьте `knowledge_base/.cache/embeddings.json` в репозиторий
-3. Деплой произойдёт автоматически при push
+1. Подключите репозиторий в Vercel
+2. Добавьте переменные окружения в Settings → Environment Variables
+3. Закоммитьте `knowledge_base/.cache/embeddings.json` в репозиторий
+4. Деплой произойдёт автоматически при push
 
-Embeddings-индекс читается из файла при первом запросе и кэшируется в памяти. Генерация embeddings при cold start не происходит.
+Embeddings-индекс читается из файла и не генерируется при cold start.
+
+---
+
+## Контакты
+
+**Kamila Urmanova** — AI Automation & Prompt Engineering
+
+- Telegram: [@kamiurrr](https://t.me/kamiurrr)
+- Email: camila-urm@yandex.ru
 
 ---
 
