@@ -275,25 +275,29 @@ export async function POST(request: NextRequest) {
         updatedData.leadSubmitted = true;
 
         const tTg = Date.now();
-        sendTelegramNotification({
-          name: leadPayload.name,
-          contact: leadPayload.contact,
-          contactType: leadPayload.contactType,
-          business,
-          task,
-          interest,
-          leadStatus,
-          consentGiven: true,
-          summary,
-        })
-          .then(() => {
-            logger.info("perf_timing", { step: "telegram_ms", ms: Date.now() - tTg });
-          })
-          .catch((err) => {
-            logger.error("telegram_notification_failed", {
-              error: err instanceof Error ? err.message : String(err),
-            });
+        try {
+          const tgResult = await sendTelegramNotification({
+            name: leadPayload.name,
+            contact: leadPayload.contact,
+            contactType: leadPayload.contactType,
+            business,
+            task,
+            interest,
+            leadStatus,
+            consentGiven: true,
+            summary,
           });
+          logger.info("perf_timing", {
+            step: "telegram_ms",
+            ms: Date.now() - tTg,
+            sent: tgResult,
+          });
+        } catch (tgErr) {
+          logger.error("telegram_notification_failed", {
+            error: tgErr instanceof Error ? tgErr.message : String(tgErr),
+            ms: Date.now() - tTg,
+          });
+        }
       } else {
         logger.error("lead_save_failed", { error: sheetsResult.error });
       }

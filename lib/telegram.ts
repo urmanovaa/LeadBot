@@ -38,6 +38,13 @@ export async function sendTelegramNotification(
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
+  logger.info("telegram_notification_sent", {
+    step: "start",
+    hasToken: !!token,
+    hasChatId: !!chatId,
+    chatIdValue: chatId ? `${chatId.slice(0, 3)}...` : "missing",
+  });
+
   if (!token || !chatId) {
     logger.warn("telegram_skipped_missing_env", {
       hasToken: !!token,
@@ -50,6 +57,9 @@ export async function sendTelegramNotification(
 
   try {
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -57,7 +67,10 @@ export async function sendTelegramNotification(
         chat_id: chatId,
         text,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
@@ -69,13 +82,17 @@ export async function sendTelegramNotification(
     }
 
     logger.info("telegram_notification_sent", {
+      step: "done",
       chatId,
       leadName: leadData.name,
     });
     return true;
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const isTimeout = message.includes("abort");
     logger.error("telegram_notification_failed", {
-      error: err instanceof Error ? err.message : String(err),
+      error: message,
+      isTimeout,
     });
     return false;
   }
