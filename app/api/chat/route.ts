@@ -116,9 +116,12 @@ function determineNextStage(
         updatedData.contactDeclined = true;
         return { stage: "contact_request", data: updatedData };
       }
-      if (updatedData.contact) {
+      if (updatedData.contact && updatedData.name) {
         updatedData.contactDeclined = false;
         return { stage: "consent_request", data: updatedData };
+      }
+      if (updatedData.contact && !updatedData.name) {
+        return { stage: "contact_request", data: updatedData };
       }
       if (messageCount >= 4) {
         return { stage: "contact_request", data: updatedData };
@@ -126,9 +129,12 @@ function determineNextStage(
       return { stage: "qualification", data: updatedData };
 
     case "contact_request":
-      if (updatedData.contact) {
+      if (updatedData.contact && updatedData.name) {
         updatedData.contactDeclined = false;
         return { stage: "consent_request", data: updatedData };
+      }
+      if (updatedData.contact && !updatedData.name) {
+        return { stage: "contact_request", data: updatedData };
       }
       if (isContactRefusal(userText)) {
         updatedData.contactDeclined = true;
